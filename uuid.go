@@ -162,7 +162,7 @@ type randBuf struct {
 func (r *randBuf) next(n int) []byte {
 	// read new 4096 bytes
 	if r.pos+n > len(r.buf) {
-		_, _ = io.ReadFull(cryptorand.Reader, r.buf)
+		_, _ = cryptorand.Read(r.buf)
 		r.pos = 0
 	}
 
@@ -199,6 +199,9 @@ func NewV4() UUID {
 	return u
 }
 
+// NewV4Fast generates a UUID v4 using math/rand/v2 as a fast PRNG.
+// WARNING: Not suitable for security-sensitive identifiers or secrets.
+// For any externally visible IDs use NewV4 or NewV4Pool which rely on crypto/rand.
 func NewV4Fast() UUID {
 	var u UUID
 
