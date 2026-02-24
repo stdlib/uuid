@@ -1,160 +1,172 @@
 package uuid
 
-// import (
-// 	"testing"
+import (
+	"testing"
 
-// 	gofrs "github.com/gofrs/uuid"
-// 	guuid "github.com/google/uuid"
-// )
+	gofrs "github.com/gofrs/uuid"
+	guuid "github.com/google/uuid"
+)
 
-// // our v1
-// func BenchmarkUUIDv1_Ours(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
-// 		_ = NewV1()
-// 	}
-// }
+// our v1
+func BenchmarkUUIDv1_Ours(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = NewV1()
+	}
+}
 
-// // google v1
-// func BenchmarkUUIDv1_Google(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
-// 		_, _ = guuid.NewUUID()
-// 	}
-// }
+// google v1
+func BenchmarkUUIDv1_Google(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _ = guuid.NewUUID()
+	}
+}
 
-// // gofrs v1
-// func BenchmarkUUIDv1_Gofrs(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
-// 		_, _ = gofrs.NewV1()
-// 	}
-// }
+// gofrs v1
+func BenchmarkUUIDv1_Gofrs(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _ = gofrs.NewV1()
+	}
+}
 
-// // our v2
-// func BenchmarkUUIDv2_Ours(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
-// 		_ = NewV2(0x00)
-// 	}
-// }
+// our v2
+func BenchmarkUUIDv2_Ours(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = NewV2(0x00)
+	}
+}
 
-// // google v2
-// func BenchmarkUUIDv2_Google(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
-// 		_, _ = guuid.NewDCEPerson()
-// 	}
-// }
+// google v2
+func BenchmarkUUIDv2_Google(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _ = guuid.NewDCEPerson()
+	}
+}
 
-// // our v3
-// func BenchmarkUUIDv3_Ours(b *testing.B) {
-// 	ns := NewV4()
-// 	name := "benchmark-test"
-// 	for i := 0; i < b.N; i++ {
-// 		_ = NewV3(ns, name)
-// 	}
-// }
+// our v3
+func BenchmarkUUIDv3_Ours(b *testing.B) {
+	ns := NewV4()
+	name := "benchmark-test"
+	for i := 0; i < b.N; i++ {
+		_ = NewV3(ns, name)
+	}
+}
 
-// // google v3
-// func BenchmarkUUIDv3_Google(b *testing.B) {
-// 	ns, _ := guuid.NewRandom()
-// 	name := "benchmark-test"
-// 	for i := 0; i < b.N; i++ {
-// 		_ = guuid.NewMD5(ns, []byte(name))
-// 	}
-// }
+// google v3
+func BenchmarkUUIDv3_Google(b *testing.B) {
+	ns, _ := guuid.NewRandom()
+	name := "benchmark-test"
+	for i := 0; i < b.N; i++ {
+		_ = guuid.NewMD5(ns, []byte(name))
+	}
+}
 
-// // gofrs v3
-// func BenchmarkUUIDv3_Gofrs(b *testing.B) {
-// 	ns, _ := gofrs.NewV4()
-// 	name := "benchmark-test"
-// 	for i := 0; i < b.N; i++ {
-// 		_ = gofrs.NewV3(ns, name)
-// 	}
-// }
+// gofrs v3
+func BenchmarkUUIDv3_Gofrs(b *testing.B) {
+	ns, _ := gofrs.NewV4()
+	name := "benchmark-test"
+	for i := 0; i < b.N; i++ {
+		_ = gofrs.NewV3(ns, name)
+	}
+}
 
-// // our v4
-// func BenchmarkUUIDv4_Our(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
-// 		_ = NewV4()
-// 	}
-// }
+// our v4
+func BenchmarkUUIDv4_Our(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = NewV4()
+	}
+}
 
-// // google v4
-// func BenchmarkUUIDv4_Google(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
-// 		_, _ = guuid.NewRandom()
-// 	}
-// }
+func BenchmarkUUIDv4_OurPool(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = NewV4Pool()
+	}
+}
 
-// // gofrs v4
-// func BenchmarkUUIDv4_Gofrs(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
-// 		_, _ = gofrs.NewV4()
-// 	}
-// }
+func BenchmarkUUIDv4_OurFastMathV2(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = NewV4Fast()
+	}
+}
 
-// // our v5
-// func BenchmarkUUIDv5_Our(b *testing.B) {
-// 	ns := NewV4()
-// 	name := "benchmark-test"
-// 	for i := 0; i < b.N; i++ {
-// 		_ = NewV5(ns, name)
-// 	}
-// }
+// google v4
+func BenchmarkUUIDv4_Google(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _ = guuid.NewRandom()
+	}
+}
 
-// // google v5
-// func BenchmarkUUIDv5_Google(b *testing.B) {
-// 	ns, _ := guuid.NewRandom()
-// 	name := "benchmark-test"
-// 	for i := 0; i < b.N; i++ {
-// 		_ = guuid.NewSHA1(ns, []byte(name))
-// 	}
-// }
+// gofrs v4
+func BenchmarkUUIDv4_Gofrs(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _ = gofrs.NewV4()
+	}
+}
 
-// // gofrs v5
-// func BenchmarkUUIDv5_Gofrs(b *testing.B) {
-// 	ns, _ := gofrs.NewV4()
-// 	name := "benchmark-test"
-// 	for i := 0; i < b.N; i++ {
-// 		_ = gofrs.NewV5(ns, name)
-// 	}
-// }
+// our v5
+func BenchmarkUUIDv5_Our(b *testing.B) {
+	ns := NewV4()
+	name := "benchmark-test"
+	for i := 0; i < b.N; i++ {
+		_ = NewV5(ns, name)
+	}
+}
 
-// // our v6
-// func BenchmarkUUIDv6_Our(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
-// 		_ = NewV6()
-// 	}
-// }
+// google v5
+func BenchmarkUUIDv5_Google(b *testing.B) {
+	ns, _ := guuid.NewRandom()
+	name := "benchmark-test"
+	for i := 0; i < b.N; i++ {
+		_ = guuid.NewSHA1(ns, []byte(name))
+	}
+}
 
-// // google v6
-// func BenchmarkUUIDv6_Google(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
-// 		_, _ = guuid.NewV6()
-// 	}
-// }
+// gofrs v5
+func BenchmarkUUIDv5_Gofrs(b *testing.B) {
+	ns, _ := gofrs.NewV4()
+	name := "benchmark-test"
+	for i := 0; i < b.N; i++ {
+		_ = gofrs.NewV5(ns, name)
+	}
+}
 
-// // gofrs v6
-// func BenchmarkUUIDv6_Gofrs(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
-// 		_, _ = gofrs.NewV6()
-// 	}
-// }
+// our v6
+func BenchmarkUUIDv6_Our(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = NewV6()
+	}
+}
 
-// // our v7
-// func BenchmarkUUIDv7_Our(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
-// 		_ = NewV7()
-// 	}
-// }
+// google v6
+func BenchmarkUUIDv6_Google(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _ = guuid.NewV6()
+	}
+}
 
-// // google v7
-// func BenchmarkUUIDv7_Google(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
-// 		_, _ = guuid.NewV7()
-// 	}
-// }
+// gofrs v6
+func BenchmarkUUIDv6_Gofrs(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _ = gofrs.NewV6()
+	}
+}
 
-// // gofrs v7
-// func BenchmarkUUIDv7_Gofrs(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
-// 		_, _ = gofrs.NewV7()
-// 	}
-// }
+// our v7
+func BenchmarkUUIDv7_Our(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = NewV7()
+	}
+}
+
+// google v7
+func BenchmarkUUIDv7_Google(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _ = guuid.NewV7()
+	}
+}
+
+// gofrs v7
+func BenchmarkUUIDv7_Gofrs(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _ = gofrs.NewV7()
+	}
+}

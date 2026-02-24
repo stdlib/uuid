@@ -2,12 +2,13 @@ package uuid
 
 import (
 	"crypto/md5"
-	"crypto/rand"
+	cryptorand "crypto/rand"
 	"crypto/sha1"
 	"encoding/binary"
 	"encoding/hex"
 	"hash"
 	"io"
+	mathrand "math/rand/v2"
 	"net"
 	"os"
 	"sync"
@@ -39,7 +40,7 @@ var (
 
 func initClockSequence() {
 	var b [2]byte
-	_, _ = rand.Read(b[:])
+	_, _ = cryptorand.Read(b[:])
 	clockSeq = binary.BigEndian.Uint16(b[:]) & 0x3FFF // 14 bit
 }
 
@@ -78,7 +79,7 @@ func NewV1() UUID {
 	if hasMAC {
 		copy(u[10:], node)
 	} else {
-		_, _ = rand.Read(u[10:])
+		_, _ = cryptorand.Read(u[10:])
 		u[10] |= 0x01 // multicast bit for random node
 	}
 
@@ -148,7 +149,7 @@ func newHashUUID(h hash.Hash, ns UUID, name string, version byte) UUID {
 var pool = sync.Pool{
 	New: func() any {
 		buf := make([]byte, 4096)
-		_, _ = io.ReadFull(rand.Reader, buf)
+		_, _ = io.ReadFull(cryptorand.Reader, buf)
 		return &randBuf{buf: buf}
 	},
 }
@@ -161,7 +162,7 @@ type randBuf struct {
 func (r *randBuf) next(n int) []byte {
 	// read new 4096 bytes
 	if r.pos+n > len(r.buf) {
-		_, _ = io.ReadFull(rand.Reader, r.buf)
+		_, _ = io.ReadFull(cryptorand.Reader, r.buf)
 		r.pos = 0
 	}
 
@@ -190,7 +191,19 @@ func NewV4Pool() UUID {
 
 func NewV4() UUID {
 	var u UUID
-	_, _ = io.ReadFull(rand.Reader, u[:])
+	_, _ = cryptorand.Read(u[:])
+
+	u[6] = (u[6] & 0x0F) | 0x40 // Version 4
+	u[8] = (u[8] & 0x3F) | 0x80 // Variant RFC 4122
+
+	return u
+}
+
+func NewV4Fast() UUID {
+	var u UUID
+
+	binary.LittleEndian.PutUint64(u[0:8], mathrand.Uint64())
+	binary.LittleEndian.PutUint64(u[8:16], mathrand.Uint64())
 
 	u[6] = (u[6] & 0x0F) | 0x40 // Version 4
 	u[8] = (u[8] & 0x3F) | 0x80 // Variant RFC 4122
@@ -246,7 +259,7 @@ func NewV6() UUID {
 	if hasMAC {
 		copy(u[10:], node)
 	} else {
-		_, _ = rand.Read(u[10:])
+		_, _ = cryptorand.Read(u[10:])
 		u[10] |= 0x01 // multicast bit
 	}
 
@@ -279,7 +292,7 @@ func NewV7() UUID {
 	u[7] = byte(seq)
 
 	var randBuf [8]byte
-	_, _ = rand.Read(randBuf[:])
+	_, _ = cryptorand.Read(randBuf[:])
 	randBuf[0] = (randBuf[0] & 0x3F) | 0x80 // variant RFC4122 (10xxxxxx)
 	copy(u[8:], randBuf[:])
 
