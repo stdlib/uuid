@@ -170,3 +170,67 @@ func BenchmarkUUIDv7_Gofrs(b *testing.B) {
 		_, _ = gofrs.NewV7()
 	}
 }
+
+func BenchmarkUUIDv4_Our_Parallel(b *testing.B) {
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_ = NewV4()
+		}
+	})
+}
+
+func BenchmarkUUIDv4_OurFastMathV2_Parallel(b *testing.B) {
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_ = NewV4Fast()
+		}
+	})
+}
+
+func BenchmarkUUIDv4_OurPool_Parallel(b *testing.B) {
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_ = NewV4Pool()
+		}
+	})
+}
+
+func BenchmarkUUIDv4_Google_Parallel(b *testing.B) {
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_, _ = guuid.NewRandom()
+		}
+	})
+}
+
+func BenchmarkUUIDv4_Gofrs_Parallel(b *testing.B) {
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_, _ = gofrs.NewV4()
+		}
+	})
+}
+
+func BenchmarkUUIDv7_Our_Parallel(b *testing.B) {
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_ = NewV7()
+		}
+	})
+}
+
+func BenchmarkUUIDv7_Google_Parallel(b *testing.B) {
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_, _ = guuid.NewV7()
+		}
+	})
+}
+
+func BenchmarkUUIDv7_Gofrs_Parallel(b *testing.B) {
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_, _ = gofrs.NewV7()
+		}
+	})
+}
