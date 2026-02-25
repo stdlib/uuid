@@ -1,128 +1,128 @@
 # uuid
 
-Fast UUID generator.
+High-performance, zero-allocation UUID generator for Go.
+Fully compliant with [RFC 4122](https://datatracker.ietf.org/doc/html/rfc4122) and [RFC 9562](https://datatracker.ietf.org/doc/html/rfc9562).
 
-[RFC 4122 - A Universally Unique IDentifier (UUID) URN Namespace](https://datatracker.ietf.org/doc/html/rfc4122)
+Built to squeeze maximum performance out of the hardware. **Zero mutexes in V4/V7 hot paths**, lock-free CAS implementations for time-based IDs, zero heap allocations, leveraging modern Go runtime features.
 
 ## Supported versions
 
-- [x] Version 1
-- [x] Version 2
-- [x] Version 3
-- [x] Version 4
-- [x] Version 5
-- [x] Version 6
-- [x] Version 7
+* [x] Version 1 (MAC-address & date-time)
+* [x] Version 2 (DCE Security)
+* [x] Version 3 (MD5 hash & namespace)
+* [x] Version 4 (Random) - 3 implementations available for different load profiles.
+* [x] Version 5 (SHA-1 hash & namespace)
+* [x] Version 6 (Field-compatible version of UUIDv1)
+* [x] Version 7 (Unix Epoch time-ordered) - **Lock-free CAS implementation.**
 
-## Benchmark test
+---
+
+## ⚠️ Security Warning
+
+**DO NOT** use `NewV4Fast()` or `NewV7Fast()` for security-sensitive identifiers (session tokens, API keys, password reset links). They use `math/rand/v2` (ChaCha8), which is optimized for absolute speed, not cryptographic security. 
+
+For externally facing and secure UUIDs, **always** use the standard `NewV4()`, `NewV4Pool()`, or `NewV7()` which rely on the kernel's CSPRNG (`crypto/rand`).
+
+---
+
+## Which generator should I use?
+
+We provide different implementations tailored to specific hardware and security constraints:
+
+### Version 4 (Random)
+* **`NewV4()`**: The standard. Cryptographically secure (`crypto/rand`), zero allocations. Use this by default.
+* **`NewV4Pool()`**: Uses a `sync.Pool` of random bytes to minimize syscalls. ~2x faster than standard, cryptographically secure. Great for high-concurrency web servers.
+* **`NewV4Fast()`**: Uses `math/rand/v2`. Insanely fast, but **NOT cryptographically secure**. Use only for internal trace IDs or non-critical DB rows.
+
+### Version 7 (Time-ordered)
+* **`NewV7()`**: The standard. Cryptographically secure random payload (`crypto/rand`), zero allocations, lock-free CAS sequence. Use this by default for database primary keys.
+* **`NewV7Fast()`**: Uses `math/rand/v2`. Extreme performance, but **NOT cryptographically secure**.
+
+## Decision Tree
+
+```mermaid
+flowchart TD
+    A[Need a UUID?] --> B{Need to be time-ordered?}
+    B -->|Yes| C{Is it for internal use only?}
+    B -->|No| D{Need crypto-security?}
+    
+    C -->|Yes, speed is key| V7F(NewV7Fast)
+    C -->|No, needs security| V7(NewV7)
+    
+    D -->|No, trace IDs only| V4F(NewV4Fast)
+    D -->|Yes, high concurrency| V4P(NewV4Pool)
+    D -->|Yes, standard load| V4(NewV4)
+    
+    style V7F fill:#f9f,stroke:#333,stroke-width:2px
+    style V7 fill:#bbf,stroke:#333,stroke-width:2px
+    style V4F fill:#f9f,stroke:#333,stroke-width:2px
+    style V4P fill:#bbf,stroke:#333,stroke-width:2px
+    style V4 fill:#bbf,stroke:#333,stroke-width:2px
 
 ```
-goos: linux
-goarch: amd64
-pkg: github.com/0x0FACED/uuid
-cpu: AMD Ryzen 5 5500U with Radeon Graphics         
-BenchmarkUUIDv1_Ours-12         20999936                57.47 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv1_Ours-12         20186533                58.25 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv1_Ours-12         20329052                59.64 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv1_Ours-12         18925119                60.37 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv1_Ours-12         20881476                57.39 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv1_Google-12       16602871                71.76 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv1_Google-12       16690766                72.87 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv1_Google-12       15567649                75.49 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv1_Google-12       15815245                71.14 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv1_Google-12       16728276                70.73 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv1_Gofrs-12        17033306                69.00 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv1_Gofrs-12        17425020                71.96 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv1_Gofrs-12        14771188                69.01 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv1_Gofrs-12        16247008                70.54 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv1_Gofrs-12        15859628                69.46 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv2_Ours-12          5414661               220.8 ns/op             0 B/op          0 allocs/op
-BenchmarkUUIDv2_Ours-12          5409886               219.9 ns/op             0 B/op          0 allocs/op
-BenchmarkUUIDv2_Ours-12          5452830               219.9 ns/op             0 B/op          0 allocs/op
-BenchmarkUUIDv2_Ours-12          5375066               220.3 ns/op             0 B/op          0 allocs/op
-BenchmarkUUIDv2_Ours-12          5435112               219.8 ns/op             0 B/op          0 allocs/op
-BenchmarkUUIDv2_Google-12        5063090               236.2 ns/op             0 B/op          0 allocs/op
-BenchmarkUUIDv2_Google-12        5074537               235.3 ns/op             0 B/op          0 allocs/op
-BenchmarkUUIDv2_Google-12        5045595               236.3 ns/op             0 B/op          0 allocs/op
-BenchmarkUUIDv2_Google-12        5100937               242.2 ns/op             0 B/op          0 allocs/op
-BenchmarkUUIDv2_Google-12        4994786               235.9 ns/op             0 B/op          0 allocs/op
-BenchmarkUUIDv3_Ours-12          5083372               241.6 ns/op           144 B/op          4 allocs/op
-BenchmarkUUIDv3_Ours-12          5016966               241.4 ns/op           144 B/op          4 allocs/op
-BenchmarkUUIDv3_Ours-12          4949304               240.0 ns/op           144 B/op          4 allocs/op
-BenchmarkUUIDv3_Ours-12          4974438               243.0 ns/op           144 B/op          4 allocs/op
-BenchmarkUUIDv3_Ours-12          4926619               242.1 ns/op           144 B/op          4 allocs/op
-BenchmarkUUIDv3_Google-12        4796034               247.7 ns/op           144 B/op          4 allocs/op
-BenchmarkUUIDv3_Google-12        4848568               246.8 ns/op           144 B/op          4 allocs/op
-BenchmarkUUIDv3_Google-12        4872985               247.6 ns/op           144 B/op          4 allocs/op
-BenchmarkUUIDv3_Google-12        4764200               246.0 ns/op           144 B/op          4 allocs/op
-BenchmarkUUIDv3_Google-12        4924530               247.9 ns/op           144 B/op          4 allocs/op
-BenchmarkUUIDv3_Gofrs-12         4797765               252.9 ns/op           144 B/op          4 allocs/op
-BenchmarkUUIDv3_Gofrs-12         4862901               253.8 ns/op           144 B/op          4 allocs/op
-BenchmarkUUIDv3_Gofrs-12         4775005               249.9 ns/op           144 B/op          4 allocs/op
-BenchmarkUUIDv3_Gofrs-12         4831238               251.7 ns/op           144 B/op          4 allocs/op
-BenchmarkUUIDv3_Gofrs-12         4641108               255.2 ns/op           144 B/op          4 allocs/op
-BenchmarkUUIDv4_Our-12          17117461                68.47 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv4_Our-12          17042155                67.53 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv4_Our-12          17164072                67.30 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv4_Our-12          15614954                68.87 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv4_Our-12          16214990                69.33 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv4_Google-12        2033109               568.9 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv4_Google-12        2002951               576.4 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv4_Google-12        2121259               569.8 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv4_Google-12        1927722               574.2 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv4_Google-12        2115675               590.6 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv4_Gofrs-12         2057848               567.9 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv4_Gofrs-12         2153323               550.1 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv4_Gofrs-12         2155024               554.5 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv4_Gofrs-12         2083617               556.6 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv4_Gofrs-12         2158005               556.3 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv5_Our-12           6537709               198.8 ns/op            24 B/op          1 allocs/op
-BenchmarkUUIDv5_Our-12           5718648               202.0 ns/op            24 B/op          1 allocs/op
-BenchmarkUUIDv5_Our-12           6098152               210.1 ns/op            24 B/op          1 allocs/op
-BenchmarkUUIDv5_Our-12           5899185               187.4 ns/op            24 B/op          1 allocs/op
-BenchmarkUUIDv5_Our-12           6390178               185.1 ns/op            24 B/op          1 allocs/op
-BenchmarkUUIDv5_Google-12        4106773               286.9 ns/op           168 B/op          4 allocs/op
-BenchmarkUUIDv5_Google-12        4145841               301.0 ns/op           168 B/op          4 allocs/op
-BenchmarkUUIDv5_Google-12        4000243               308.1 ns/op           168 B/op          4 allocs/op
-BenchmarkUUIDv5_Google-12        3955555               303.6 ns/op           168 B/op          4 allocs/op
-BenchmarkUUIDv5_Google-12        4170256               302.7 ns/op           168 B/op          4 allocs/op
-BenchmarkUUIDv5_Gofrs-12         3207034               314.6 ns/op           168 B/op          4 allocs/op
-BenchmarkUUIDv5_Gofrs-12         4221594               294.8 ns/op           168 B/op          4 allocs/op
-BenchmarkUUIDv5_Gofrs-12         4083728               344.1 ns/op           168 B/op          4 allocs/op
-BenchmarkUUIDv5_Gofrs-12         4025864               302.1 ns/op           168 B/op          4 allocs/op
-BenchmarkUUIDv5_Gofrs-12         3941733               306.5 ns/op           168 B/op          4 allocs/op
-BenchmarkUUIDv6_Our-12          18396920                65.57 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv6_Our-12          16661672                65.10 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv6_Our-12          17435295                66.88 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv6_Our-12          17882170                67.64 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv6_Our-12          18065449                65.62 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv6_Google-12       14264035                78.86 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv6_Google-12       14951728                79.05 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv6_Google-12       16337718                74.97 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv6_Google-12       16451085                81.19 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv6_Google-12       16443512                74.27 ns/op            0 B/op          0 allocs/op
-BenchmarkUUIDv6_Gofrs-12         1835128               648.1 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv6_Gofrs-12         1824901               702.4 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv6_Gofrs-12         1831963               621.0 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv6_Gofrs-12         1927111               662.9 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv6_Gofrs-12         1782142               649.6 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv7_Our-12           1990425               600.2 ns/op             0 B/op          0 allocs/op
-BenchmarkUUIDv7_Our-12           2103853               573.6 ns/op             0 B/op          0 allocs/op
-BenchmarkUUIDv7_Our-12           2100456               571.8 ns/op             0 B/op          0 allocs/op
-BenchmarkUUIDv7_Our-12           2045240               604.6 ns/op             0 B/op          0 allocs/op
-BenchmarkUUIDv7_Our-12           1948148               605.3 ns/op             0 B/op          0 allocs/op
-BenchmarkUUIDv7_Google-12        1775641               667.8 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv7_Google-12        1708155               679.4 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv7_Google-12        1850067               697.7 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv7_Google-12        1640768               725.1 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv7_Google-12        1664174               669.9 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv7_Gofrs-12         1876887               652.9 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv7_Gofrs-12         1789802               647.9 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv7_Gofrs-12         1890902               645.9 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv7_Gofrs-12         1785714               622.2 ns/op            16 B/op          1 allocs/op
-BenchmarkUUIDv7_Gofrs-12         1872841               671.2 ns/op            16 B/op          1 allocs/op
+
+*(Note: Pink nodes denote non-cryptographic, high-speed algorithms)*
+
+---
+
+## Installation
+
+```bash
+go get github.com/stdlib/uuid@latest
 ```
 
-## Benchmark diagram
+## Why doesn't the API return errors?
 
-![diagram](benchmark-diagram.png)
+Most libraries force you to write boilerplate code like this:
+
+```go
+id, err := uuid.NewV4()
+if err != nil { ... }
+
+```
+
+In `stdlib/uuid`, we intentionally dropped the `error` return value.
+
+**Reasoning:** In modern Go, reading from the system CSPRNG (`crypto/rand`) or using built-in generators (`math/rand/v2`) cannot "accidentally" fail during normal application runtime. If the OS kernel (e.g., Linux) fails to provide random bytes, the Go runtime will `panic` anyway, as further cryptographic operations are compromised. Returning an error for every UUID generation is cargo-cult programming that pollutes the caller code with useless checks. Our API is clean: you ask for an ID - you get an ID instantly.
+
+## Usage
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/stdlib/uuid"
+)
+
+func main() {
+    // Standard secure V4
+    u4 := uuid.NewV4()
+    fmt.Println("V4 Secure:", u4.String())
+
+    // Ultra-fast internal V4
+    u4fast := uuid.NewV4Fast()
+    fmt.Println("V4 Fast:  ", u4fast.String())
+
+    // Time-ordered V7 for databases
+    u7 := uuid.NewV7()
+    fmt.Println("V7 DB Key:", u7.String())
+}
+
+```
+
+## Benchmarks
+
+Tested under high concurrent load (`b.RunParallel`) on 16 cores (Intel Core Ultra 9 285H).
+
+Our algorithms `NewV4Fast` (Per-P state ChaCha8) and `NewV7` (Lock-free CAS + Gosched) demonstrate absolute dominance both in throughput and zero Garbage Collector (GC) pressure.
+
+| Implementation (16 cores)     | Speed (ns/op)   | Allocations (B/op) | Allocs/op |
+| ----------------------------- | --------------- | ------------------ | --------- |
+| **`stdlib/uuid.NewV4Fast()`** | **1.27 ns/op**  | **0 B/op**         | **0**     |
+| `gofrs/uuid.NewV4()`          | 52.62 ns/op     | 16 B/op            | 1         |
+| `google/uuid.NewRandom()`     | 54.77 ns/op     | 16 B/op            | 1         |
+|                               |                 |                    |           |
+| **`stdlib/uuid.NewV7()`**     | **69.09 ns/op** | **0 B/op**         | **0**     |
+| `google/uuid.NewV7()`         | 337.6 ns/op     | 16 B/op            | 1         |
+| `gofrs/uuid.NewV7()`          | 349.3 ns/op     | 16 B/op            | 1         |
